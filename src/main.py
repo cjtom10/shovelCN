@@ -16,15 +16,16 @@ from direct.showbase.InputStateGlobal import inputState
 import simplepbr
 import gltf
 
-from panda3d.core import AmbientLight
-from panda3d.core import DirectionalLight
-from panda3d.core import Vec3
-from panda3d.core import Vec4
-from panda3d.core import Point3
-from panda3d.core import TransformState
-from panda3d.core import BitMask32
-from panda3d.core import Filename
-from panda3d.core import PNMImage
+from panda3d.core import *
+# from panda3d.core import AmbientLight
+# from panda3d.core import DirectionalLight
+# from panda3d.core import Vec3
+# from panda3d.core import Vec4
+# from panda3d.core import Point3
+# from panda3d.core import TransformState
+# from panda3d.core import BitMask32
+# from panda3d.core import Filename
+# from panda3d.core import PNMImage
 
 from panda3d.bullet import BulletWorld
 from panda3d.bullet import BulletPlaneShape
@@ -51,6 +52,7 @@ class Game(DirectObject):
 
     base.cam.setPos(0, -20, 4)
     base.cam.lookAt(0, 0, 0)
+    self.lerpCam=None
 
     # Light
     alight = AmbientLight('ambientLight')
@@ -131,8 +133,8 @@ class Game(DirectObject):
   def processInput(self, dt):
     speed = Vec3(0, 0, 0)
     omega = 0.0
-
-    if inputState.isSet('forward'): speed.setY( 2.0)
+    speed.setY( 2.0)
+    # if inputState.isSet('forward'): speed.setY( 2.0)
     if inputState.isSet('reverse'): speed.setY(-2.0)
     if inputState.isSet('left'):    speed.setX(-2.0)
     if inputState.isSet('right'):   speed.setX( 2.0)
@@ -148,12 +150,35 @@ class Game(DirectObject):
     self.processInput(dt)
     self.world.doPhysics(dt, 4, 1./240.)
 
+    # self.camtask()
+    # self.camtarg.setPos(self.playerNP.getPos(render))
+
     return task.cont
+  # 
+  def camtask(self):
+    dis = (self.playerNP.getPos(render) - self.camtarg.getPos(render))
+    if dis > 2 and self.lerpCam == None:
+
+      self.lerpCam = Sequence(LerpPosInterval(self.camtarg, delaytime, mp)).start()
+      # self.lerpCam.start()
+      return #task.contmovetarget
+
+    if dis <2 and self.lerpCam != None: #and self.isIdle == True:
+            
+            self.lerpCam.pause()
+            self.lerpCam = None
+            return #task.cont
+        
+    #offset camera moveme
+  # def wait(self, t):
+
 
   def cleanup(self):
     self.world = None
     self.worldNP.removeNode()
 
+  def pplSetup(self):
+    r
   def setup(self):
     self.worldNP = render.attachNewNode('World')
 
@@ -177,6 +202,10 @@ class Game(DirectObject):
     np.setCollideMask(BitMask32.allOn())
 
     self.world.attachRigidBody(np.node())
+
+    self.lvl = loader.loadModel('../models/lvl.glb')
+    self.lvl.reparentTo(self.worldNP)
+    self.make_collision_from_model(self.lvl,0,0,self.world,self.lvl.getPos())
 
     # Box
     shape = BulletBoxShape(Vec3(1.0, 3.0, 0.3))
@@ -206,16 +235,47 @@ class Game(DirectObject):
     self.world.attachCharacter(self.player)
 
 
-    base.cam.reparentTo(self.playerNP)
+    
     minn = loader.loadModel('../models/minn.glb')
+    campos = self.lvl.find('camPos').getPos(render)
     minn.reparentTo(self.worldNP)
-
-
+    # self.camtarg = self.worldNP.attachNewNode('cam targ')
+    # base.cam.setPos(25,0,15)
+    # base.cam.setHpr(-90,-45,0)
+    base.cam.setPos(0,-40,30)
+    base.cam.setP(-30)
+    # base.cam.reparentTo(self.camtarg)
     #self.crouching = False
 
     #self.player = node # For player control
     #self.playerNP2 = np
+  def make_collision_from_model(self, input_model, node_number, mass, world, target_pos,mask = BitMask32.bit(0),name ='input_model_tri_mesh'):
+                # tristrip generation from static models
+                # generic tri-strip collision generator begins
+                geom_nodes = input_model.find_all_matches('**/+GeomNode')
+                geom_nodes = geom_nodes.get_path(node_number).node()
+                # print(geom_nodes)
+                geom_target = geom_nodes.get_geom(0)
+                # print(geom_target)
+                output_bullet_mesh = BulletTriangleMesh()
+                output_bullet_mesh.add_geom(geom_target)
+                tri_shape = BulletTriangleMeshShape(output_bullet_mesh, dynamic=False)
+                print(output_bullet_mesh)
 
+                body = BulletRigidBodyNode(name)
+                np = render.attach_new_node(body)
+                np.node().add_shape(tri_shape)
+                np.node().set_mass(mass)
+                np.node().set_friction(0.01)
+                np.set_pos(target_pos)
+                np.set_scale(1)
+                # np.set_h(180)
+                # np.set_p(180)
+                # np.set_r(180)
+                # np.set_collide_mask(BitMask32.allOn())
+                np.set_collide_mask(mask)
+                
+                world.attach_rigid_body(np.node())
     #self.playerNP = Actor('models/ralph/ralph.egg', {
     #                      'run' : 'models/ralph/ralph-run.egg',
     #                      'walk' : 'models/ralph/ralph-walk.egg',

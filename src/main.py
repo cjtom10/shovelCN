@@ -13,6 +13,9 @@ from direct.actor.Actor import Actor
 from direct.showbase.DirectObject import DirectObject
 from direct.showbase.InputStateGlobal import inputState
 
+import simplepbr
+import gltf
+
 from panda3d.core import AmbientLight
 from panda3d.core import DirectionalLight
 from panda3d.core import Vec3
@@ -38,6 +41,11 @@ from panda3d.bullet import ZUp
 class Game(DirectObject):
 
   def __init__(self):
+    gltf.patch_loader(loader)
+    pipeline = simplepbr.init()
+    pipeline.use_normal_maps = True
+    pipeline.use_occlusion_maps = True
+
     base.setBackgroundColor(0.1, 0.1, 0.8, 1)
     base.setFrameRateMeter(True)
 
@@ -198,7 +206,9 @@ class Game(DirectObject):
     self.world.attachCharacter(self.player)
 
 
-
+    base.cam.reparentTo(self.playerNP)
+    minn = loader.loadModel('../models/minn.glb')
+    minn.reparentTo(self.worldNP)
 
 
     #self.crouching = False

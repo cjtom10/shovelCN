@@ -4,7 +4,7 @@ loadPrcFileData("", "sync-video t")
 
 #from pandac.PandaModules import loadPrcFileData
 #loadPrcFileData('', 'load-display tinydisplay')
-
+import random
 import sys
 import time
 import direct.directbase.DirectStart
@@ -12,6 +12,8 @@ import direct.directbase.DirectStart
 from direct.actor.Actor import Actor
 from direct.showbase.DirectObject import DirectObject
 from direct.showbase.InputStateGlobal import inputState
+from direct.gui.OnscreenText import OnscreenText,TextNode
+from direct.gui.OnscreenImage import OnscreenImage
 
 from direct.interval.LerpInterval import LerpFunc
 from direct.interval.IntervalGlobal import Sequence, Parallel, Func, Wait
@@ -54,29 +56,51 @@ class Game(DirectObject):
     gltf.patch_loader(loader)
     pipeline = simplepbr.init()
     pipeline.use_normal_maps = True
-    pipeline.use_occlusion_maps = True
+    # pipeline.use_occlusion_maps = True
 
     base.setBackgroundColor(0.1, 0.1, 0.8, 1)
     base.setFrameRateMeter(True)
 
-    base.cam.setPos(0, -20, 4)
+    base.cam.setPos(0, -10, 3)
     base.cam.lookAt(0, 0, 0)
-    self.lerpCam=None
+
+    # self.bg = loader.loadSfx('../sounds/pa2.wav')
+    # self.bg.play()
+
+    self.oppas =['../models/oppas/oppa1.egg','../models/oppas/oppa2.egg']
+    
+    self.hidden = NodePath('hidden')
+    self.text = TextNode('text')
+    self.textNP = aspect2d.attachNewNode(self.text)
+    self.textNP.setScale(.08)
+    self.textNP.setPos(-.9,0,-.6)
+    self.oppacount = 500
+    self.setup()
+    self.timer=0
 
     # Light
     alight = AmbientLight('ambientLight')
-    alight.setColor(Vec4(0.5, 0.5, 0.5, 1))
+    alight.setColor(Vec4(.75, .75, 0.75, .5))
     alightNP = render.attachNewNode(alight)
 
     dlight = DirectionalLight('directionalLight')
-    dlight.setDirection(Vec3(1, 1, -1))
+    dlight.setDirection(Vec3(1, -1, -1))
     dlight.setColor(Vec4(0.7, 0.7, 0.7, 1))
     dlightNP = render.attachNewNode(dlight)
+
+    plight = PointLight('lvl')
+    plightNP = render.attachNewNode(plight)
+    plight.setColor(Vec4(0.7, 0.7, 0.7, 1))
+    plightNP.setPos(0,0,1)
 
     render.clearLight()
     render.setLight(alightNP)
     render.setLight(dlightNP)
+    render.setLight(plightNP)
 
+    self.collisionSetup()
+
+    self.accept('findoppa-into-oppafound', self.oppaFound)
     # Input
     self.accept('escape', self.doExit)
     self.accept('r', self.doReset)
@@ -88,6 +112,8 @@ class Game(DirectObject):
     #self.accept('space', self.doJump)
     #self.accept('c', self.doCrouch)
 
+    
+
     inputState.watchWithModifiers('forward', 'w')
     inputState.watchWithModifiers('left', 'a')
     inputState.watchWithModifiers('reverse', 's')
@@ -98,8 +124,9 @@ class Game(DirectObject):
     # Task
     taskMgr.add(self.update, 'updateWorld')
 
+    
     # Physics
-    self.setup()
+
 
   # _____HANDLER_____
 
@@ -108,6 +135,9 @@ class Game(DirectObject):
     sys.exit(1)
 
   def doReset(self):
+    self.timer=0
+    self.oppacount += 10
+    self.oppas =['../models/oppas/oppa1.egg','../models/oppas/oppa2.egg','../models/oppas/oppa3.egg']
     self.cleanup()
     self.setup()
 
@@ -125,6 +155,17 @@ class Game(DirectObject):
 
   def doScreenshot(self):
     base.screenshot('Bullet')
+
+  def collisionSetup(self):
+     traverser = CollisionTraverser('collider')
+     base.cTrav = traverser
+     
+     self.collHandEvent = CollisionHandlerEvent()
+     self.collHandEvent.addInPattern('%fn-into-%in') 
+     traverser.addCollider(self.findoppa, self.collHandEvent)
+
+     traverser.addCollider(self.found, self.collHandEvent)
+
 
   #def doJump(self):
   #  self.player.setMaxJumpHeight(5.0)
@@ -147,17 +188,22 @@ class Game(DirectObject):
     if inputState.isSet('reverse'): speed.setY(-2.0)
     if inputState.isSet('left'):    speed.setX(-2.0)
     if inputState.isSet('right'):   speed.setX( 2.0)
-    if inputState.isSet('turnLeft'):  omega =  120.0
-    if inputState.isSet('turnRight'): omega = -120.0
+    if inputState.isSet('turnLeft'):  omega =  30.0
+    if inputState.isSet('turnRight'): omega = -30.0
 
     self.player.setAngularMovement(omega)
     self.player.setLinearMovement(speed, True)
 
+  def oppaFound(self, entry):
+     print(' you found opppa! time:', self.timer)
+
   def update(self, task):
     dt = globalClock.getDt()
-
+    self.timer +=dt
     self.processInput(dt)
     self.world.doPhysics(dt, 4, 1./240.)
+
+
 
     # self.playeranim()
     # self.camtask()
@@ -165,8 +211,28 @@ class Game(DirectObject):
     # self.camtarg.setPos(self.playerNP.getPos(render))
 
     for npc in self.npc_list:
-      npc.setHpr(0, 0, 0)
-      
+      npc.setP(0)
+      npc.setR(0)
+    self.oppa.setP(0)
+    self.oppa.setR(0)
+
+    #move oppas
+    if self.timer > 2:
+      for oppa in self.activeNPCs:
+        force = Vec3(0, 30, 0)
+        torque = Vec3(10, 0, 0)
+        # force *= 30.0
+        # torque *= 10.0
+
+        force = render.getRelativeVector(oppa, force)
+        torque = render.getRelativeVector(oppa, torque)
+
+        oppa.node().setActive(True)
+        oppa.node().applyCentralForce(force)
+        oppa.node().applyTorque(torque)    
+
+        oppa.setCollideMask(BitMask32.bit(0))
+
     return task.cont
   def playeranim(self):
         self.anim = self.playerM.getCurrentAnim
@@ -195,10 +261,56 @@ class Game(DirectObject):
   def cleanup(self):
     self.world = None
     self.worldNP.removeNode()
+  def oppaSetup(self):#, oppaModel, anim):
+    
+    x = random.randrange(0,len(self.oppas))
+    a=random.randint(1,4)
+    currentoppa = self.oppas[x]
+    self.oppas.remove(currentoppa)
 
-  def pplSetup(self):
-    r
+    cylinder_shape = BulletCylinderShape(0.5, 1.4, ZUp)
+    self.oppa = self.worldNP.attachNewNode(BulletRigidBodyNode('Cylinder'))
+    self.oppa.node().setMass(1.0)
+    self.oppa.node().addShape(cylinder_shape)
+    self.oppa.setPos(random.randrange(-20,20), random.randrange(30,50), 3)
+    self.oppa.setHpr(0,0,0)
+    self.oppa.setCollideMask(BitMask32.allOn())
+    self.world.attachRigidBody(self.oppa.node())
 
+    oppaModel = Actor(currentoppa,
+                      {'idle1': f'../models/oppa{x+1}-idle1.egg',
+                       'idle2': f'../models/oppa{x+1}-idle2.egg',
+                       'idle3': f'../models/oppa{x+1}-idle3.egg',
+                       'idle4': f'../models/oppa{x+1}-idle4.egg'})
+    # oppaModel = Actor('../models/oppa1.egg',
+    #                   {'idle': '../models/oppa1-idle1.egg'})
+    # print(f'../models/oppa-idle{a}.egg')
+    oppaModel.reparentTo(self.oppa)
+    oppaModel.setZ(-1)
+    oppaModel.setScale(.8)
+    oppaModel.loop('idle3')
+
+    self.found=self.oppa.attachNewNode(CollisionNode('oppafound'))
+    sphere =CollisionSphere(0,0,0, 1)
+    self.found.node().addSolid(sphere)
+    self.found.show()
+    
+    def showOppa():
+      img = currentoppa.replace("egg", "png")
+      print('currentoppa',currentoppa)
+      self.text.setText('Wanted')
+      wanted = OnscreenImage(image=img, pos=(0, 10, 0.0))
+
+      def show():
+         wanted.reparentTo(aspect2d)
+         self.text.setText('Wanted')
+      def hide():
+         wanted.reparentTo(self.hidden)
+         self.text.clearText()
+      s=Func(show)
+      h=Func(hide)
+      imgseq = Sequence(s,Wait(2),h).start()
+    showOppa()
   def setup(self):
     self.worldNP = render.attachNewNode('World')
 
@@ -224,8 +336,9 @@ class Game(DirectObject):
     self.world.attachRigidBody(np.node())
 
     self.lvl = loader.loadModel('../models/lvl.glb')
+    lvlgeom =  loader.loadModel('../models/lvlgeom.glb')
     self.lvl.reparentTo(self.worldNP)
-    self.make_collision_from_model(self.lvl,0,0,self.world,self.lvl.getPos())
+    self.make_collision_from_model(lvlgeom,0,0,self.world,lvlgeom.getPos())
 
     # Box
     shape = BulletBoxShape(Vec3(1.0, 3.0, 0.3))
@@ -238,6 +351,8 @@ class Game(DirectObject):
     np.setCollideMask(BitMask32.allOn())
 
     self.world.attachRigidBody(np.node())
+
+    self.oppaSetup()
 
     # Character
     h = 1.75
@@ -260,17 +375,34 @@ class Game(DirectObject):
     self.playerM.reparentTo(self.playerNP)
     self.playerM.setZ(-1)
 
+    shovel = loader.loadModel('../models/shovel.glb')
+    handl = self.playerM.exposeJoint(None, 'modelRoot', 'hand.l')
+    shovel.reparentTo(handl)
+    shovel.setP(-90)
+
+
+    self.findoppa=self.playerNP.attachNewNode(CollisionNode('findoppa'))
+    sphere =CollisionSphere(0,1,0, 1)
+    self.findoppa.node().addSolid(sphere)
+    self.findoppa.show()
+    shovel.setPos(-.1,0,0)
+
     """----------------- NPC creation ------------------"""
     npc_factory = NPCFactory()
-    self.npc_list = npc_factory.create(self.world, self.worldNP, 500)
+    self.npc_list = npc_factory.create(self.world, self.worldNP, self.oppas,self.oppacount)
+    self.activeNPCs = []
+    for i in self.npc_list:
+       if i < (self.oppacount * .2):
+          self.activeNPCs.append(i)
 
-    minn = loader.loadModel('../models/minn.glb')
-    minn.reparentTo(self.worldNP)
+    # minn = loader.loadModel('../models/minn.glb')
+    # minn.reparentTo(self.worldNP)
     # self.camtarg = self.worldNP.attachNewNode('cam targ')
     # base.cam.setPos(25,0,15)
     # base.cam.setHpr(-90,-45,0)
     # base.cam.setPos(0,-40,30)
-    # base.cam.setP(-30)
+    # base.cam.setP(-30)\handr = self
+   
     base.cam.reparentTo(self.playerNP)
     base.cam.setY(-10)
 

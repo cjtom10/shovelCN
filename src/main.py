@@ -14,7 +14,6 @@ from direct.showbase.DirectObject import DirectObject
 from direct.showbase.InputStateGlobal import inputState
 from direct.gui.OnscreenText import OnscreenText,TextNode
 from direct.gui.OnscreenImage import OnscreenImage
-
 from direct.interval.LerpInterval import LerpFunc
 from direct.interval.IntervalGlobal import Sequence, Parallel, Func, Wait
 from direct.interval.LerpInterval import *
@@ -296,23 +295,29 @@ class Game(DirectObject):
     self.found.show()
     
     def showOppa():
-      img = currentoppa.replace("egg", "png")
-      print('currentoppa',currentoppa)
-      self.text.setText('Wanted')
-      wanted = OnscreenImage(image=img, pos=(0, 10, 0.0))
-      saranghae = OnscreenText(text='oppa saranghae')
+        img = currentoppa.replace("egg", "png")
+        print('currentoppa',currentoppa)
+        self.image_node = OnscreenImage(image=img, pos=(0, 10, 0.0))
+        self.wanted_text = TextNode('wanted')
+        self.wanted_text.setText('WANTED')
+        self.wanted_text.setTextColor(1, 0.2, 0.2, 1)
+        self.wanted_text.setShadow(0.05, 0.05)
+        self.wanted_text.setAlign(TextNode.ACenter)
+        self.wanted_text.setCardColor(0.5, 0.2, 0.4, 0.3)
+        self.wanted_text.setCardAsMargin(0, 0, 0, 0)
+        self.wanted_text.setCardDecal(True)
+        self.wanted_text_np = aspect2d.attachNewNode(self.wanted_text)
+        self.wanted_text_np.setScale(0.3)
 
-      def show():
-         wanted.reparentTo(aspect2d)
-         saranghae.reparentTo(aspect2d)
-         self.text.setText('Wanted')
-      def hide():
-         wanted.reparentTo(self.hidden)
-         saranghae.reparentTo(self.hidden)
-         self.text.clearText()
-      s=Func(show)
-      h=Func(hide)
-      imgseq = Sequence(s,Wait(2),h).start()
+        def show():
+           self.image_node.reparentTo(aspect2d)
+           self.wanted_text_np.reparentTo(aspect2d)
+        def hide():
+           self.image_node.reparentTo(self.hidden)
+           self.wanted_text_np.reparentTo(self.hidden)
+        s=Func(show)
+        h=Func(hide)
+        imgseq = Sequence(s,Wait(2),h).start()
     showOppa()
   def setup(self):
     self.worldNP = render.attachNewNode('World')

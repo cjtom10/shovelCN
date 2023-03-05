@@ -300,12 +300,15 @@ class Game(DirectObject):
       print('currentoppa',currentoppa)
       self.text.setText('Wanted')
       wanted = OnscreenImage(image=img, pos=(0, 10, 0.0))
+      saranghae = OnscreenText(text='oppa saranghae')
 
       def show():
          wanted.reparentTo(aspect2d)
+         saranghae.reparentTo(aspect2d)
          self.text.setText('Wanted')
       def hide():
          wanted.reparentTo(self.hidden)
+         saranghae.reparentTo(self.hidden)
          self.text.clearText()
       s=Func(show)
       h=Func(hide)

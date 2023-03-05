@@ -14,6 +14,7 @@ from direct.showbase.DirectObject import DirectObject
 from direct.showbase.InputStateGlobal import inputState
 from direct.gui.OnscreenText import OnscreenText,TextNode
 from direct.gui.OnscreenImage import OnscreenImage
+from direct.gui.DirectGui import DGG, DirectButton, DirectFrame
 from direct.interval.LerpInterval import LerpFunc
 from direct.interval.IntervalGlobal import Sequence, Parallel, Func, Wait
 from direct.interval.LerpInterval import *
@@ -51,7 +52,7 @@ from NPCFactory import NPCFactory
 
 class Game(DirectObject):
 
-  def __init__(self):
+  def deferred_init(self):
     gltf.patch_loader(loader)
     pipeline = simplepbr.init()
     pipeline.use_normal_maps = True
@@ -112,7 +113,6 @@ class Game(DirectObject):
 
     self.accept('findoppa-into-oppafound', self.oppaFound)
     # Input
-    self.accept('escape', self.doExit)
     self.accept('r', self.doReset)
     self.accept('f1', self.toggleWireframe)
     self.accept('f2', self.toggleTexture)
@@ -139,6 +139,27 @@ class Game(DirectObject):
 
 
   # _____HANDLER_____
+
+  def __init__(self):
+    self.accept('escape', self.doExit)
+    frame = DirectFrame(frameColor=(0, 0, 0, 1), frameSize=(-100, 100, -100, 100))
+    title = OnscreenText(text="OPPA IN A HAYSTACK", scale=0.2,
+                            fg=(1, 0.5, 0.5, 1), align=TextNode.ACenter,
+                            mayChange=1)
+    desc = OnscreenText(text="When push comes to shovel", scale=0.1,
+                            pos=(0, -0.1, 0), fg=(0.5, 0.5, 0.5, 1), align=TextNode.ACenter,
+                            mayChange=1)
+
+    def handle_play():
+        frame.destroy()
+        title.destroy()
+        desc.destroy()
+        play_button.destroy()
+        exit_button.destroy()
+        self.deferred_init()
+
+    play_button = DirectButton(text=("PLAY"), pos=(0, 0, -0.3), scale=0.1, command=handle_play)
+    exit_button = DirectButton(text=("EXIT"), pos=(0, 0, -0.45), scale=0.1, command=self.doExit)
 
   def doExit(self):
     self.cleanup()

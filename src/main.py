@@ -37,7 +37,10 @@ from panda3d.bullet import BulletCharacterControllerNode
 from panda3d.bullet import BulletHeightfieldShape
 from panda3d.bullet import BulletTriangleMesh
 from panda3d.bullet import BulletTriangleMeshShape
+from panda3d.bullet import BulletCylinderShape
 from panda3d.bullet import ZUp
+
+from NPCFactory import NPCFactory
 
 class Game(DirectObject):
 
@@ -229,21 +232,24 @@ class Game(DirectObject):
     # self.player.setMaxSlope(45.0)
     # self.player.setGravity(9.81)
     self.playerNP = self.worldNP.attachNewNode(self.player)
-    # self.playerNP.setPos(-2, 0, 10)
+    self.playerNP.setPos(-2, 10, 10)
     # self.playerNP.setH(-90)
     self.playerNP.setCollideMask(BitMask32.allOn())
     self.world.attachCharacter(self.player)
 
+    """----------------- NPC creation ------------------"""
+    npc_factory = NPCFactory()
+    npc_factory.create(self.world, self.worldNP, 500)
 
-    
     minn = loader.loadModel('../models/minn.glb')
-    campos = self.lvl.find('camPos').getPos(render)
     minn.reparentTo(self.worldNP)
     # self.camtarg = self.worldNP.attachNewNode('cam targ')
     # base.cam.setPos(25,0,15)
     # base.cam.setHpr(-90,-45,0)
-    base.cam.setPos(0,-40,30)
-    base.cam.setP(-30)
+    # base.cam.setPos(0,-40,30)
+    # base.cam.setP(-30)
+    base.cam.reparentTo(self.playerNP)
+    base.cam.setY(-10)
     # base.cam.reparentTo(self.camtarg)
     #self.crouching = False
 

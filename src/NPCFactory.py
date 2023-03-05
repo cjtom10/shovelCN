@@ -17,8 +17,10 @@ class NPCFactory:
             npc.node().setMass(500.0)
             npc.node().addShape(cylinder_shape)
             npc.setPos(random.randrange(-20,20), random.randrange(0,50), 3)
-            npc.setH(0)
+            npc.setHpr(0,0,0)
             npc.setCollideMask(BitMask32.allOn())
             world.attachRigidBody(npc.node())
+
+
 
     

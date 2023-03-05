@@ -13,6 +13,12 @@ from direct.actor.Actor import Actor
 from direct.showbase.DirectObject import DirectObject
 from direct.showbase.InputStateGlobal import inputState
 
+from direct.interval.LerpInterval import LerpFunc
+from direct.interval.IntervalGlobal import Sequence, Parallel, Func, Wait
+from direct.interval.LerpInterval import *
+from direct.interval.ActorInterval import ActorInterval, LerpAnimInterval
+import logging
+
 import simplepbr
 import gltf
 
@@ -153,11 +159,18 @@ class Game(DirectObject):
     self.processInput(dt)
     self.world.doPhysics(dt, 4, 1./240.)
 
+    # self.playeranim()
     # self.camtask()
+ 
     # self.camtarg.setPos(self.playerNP.getPos(render))
 
     return task.cont
-  # 
+  def playeranim(self):
+        self.anim = self.playerM.getCurrentAnim
+        # if self.anim!='sweeping':
+        #    self.playerM.loop("walk")
+    #  if self.playerM.getCurrentAnim!="sweeping":
+        self.playerM.play('sweeping') 
   def camtask(self):
     dis = (self.playerNP.getPos(render) - self.camtarg.getPos(render))
     if dis > 2 and self.lerpCam == None:
@@ -182,6 +195,7 @@ class Game(DirectObject):
 
   def pplSetup(self):
     r
+
   def setup(self):
     self.worldNP = render.attachNewNode('World')
 
@@ -228,6 +242,7 @@ class Game(DirectObject):
     shape = BulletCapsuleShape(w, h - 2 * w, ZUp)
 
     self.player = BulletCharacterControllerNode(shape, 0.4, 'Player')
+    
     # self.player.setMass(20.0)
     # self.player.setMaxSlope(45.0)
     # self.player.setGravity(9.81)
@@ -236,6 +251,11 @@ class Game(DirectObject):
     # self.playerNP.setH(-90)
     self.playerNP.setCollideMask(BitMask32.allOn())
     self.world.attachCharacter(self.player)
+    self.playerM = Actor('../models/theplayer.egg', {
+                            'idle': '../models/theplayer-idle.egg',
+                            'sweeping' : '../models/theplayer-sweeping.egg'})
+    self.playerM.reparentTo(self.playerNP)
+    self.playerM.setZ(-1)
 
     """----------------- NPC creation ------------------"""
     npc_factory = NPCFactory()
@@ -250,6 +270,8 @@ class Game(DirectObject):
     # base.cam.setP(-30)
     base.cam.reparentTo(self.playerNP)
     base.cam.setY(-10)
+
+    self.playerM.loop('sweeping')
     # base.cam.reparentTo(self.camtarg)
     #self.crouching = False
 

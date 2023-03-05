@@ -63,7 +63,7 @@ class Game(DirectObject):
     base.cam.setPos(0, -10, 3)
     base.cam.lookAt(0, 0, 0)
 
-    # self.bg = loader.loadSfx('../sounds/pa2.wav')
+    self.startSound = loader.loadSfx('../sounds/findOppa.wav')
     # self.bg.play()
 
     self.oppas =['../models/oppas/oppa1.egg','../models/oppas/oppa2.egg']
@@ -73,13 +73,24 @@ class Game(DirectObject):
     self.textNP = aspect2d.attachNewNode(self.text)
     self.textNP.setScale(.08)
     self.textNP.setPos(-.9,0,-.6)
-    self.oppacount = 500
+    self.text.setText("Q: turn Left\nE: turn right")
+    self.oppacount = 300
     self.setup()
     self.timer=0
 
+    skybox = loader.loadModel('../models/inkskybox2.glb')
+    skybox.setPos(0,0,0)
+# skr.loadModel('../models/skybox.egg')
+    
+    skybox.setDepthWrite(False)
+    # skybox.setTransparency(True)
+    base.setBackgroundColor(0,0,0)
+    skybox.reparentTo(base.camera)
+    skybox.setCompass()
+
     # Light
     alight = AmbientLight('ambientLight')
-    alight.setColor(Vec4(.75, .75, 0.75, .5))
+    alight.setColor(Vec4(.5, .5, 0.5, 1))
     alightNP = render.attachNewNode(alight)
 
     dlight = DirectionalLight('directionalLight')
@@ -212,6 +223,7 @@ class Game(DirectObject):
     for npc in self.npc_list:
       npc.setP(0)
       npc.setR(0)
+      npc.node().applyTorque(Vec3(10,0,0)) 
     self.oppa.setP(0)
     self.oppa.setR(0)
 
@@ -317,7 +329,8 @@ class Game(DirectObject):
            self.wanted_text_np.reparentTo(self.hidden)
         s=Func(show)
         h=Func(hide)
-        imgseq = Sequence(s,Wait(2),h).start()
+        sfx = Func(self.startSound.play)
+        imgseq = Sequence(s,sfx,Wait(2),h).start()
     showOppa()
   def setup(self):
     self.worldNP = render.attachNewNode('World')
@@ -412,7 +425,7 @@ class Game(DirectObject):
     # base.cam.setP(-30)\handr = self
    
     base.cam.reparentTo(self.playerNP)
-    base.cam.setY(-10)
+    base.cam.setY(-13)
 
     self.playerM.loop('sweeping')
     # base.cam.reparentTo(self.camtarg)

@@ -20,7 +20,7 @@ class NPCFactory:
             npc = worldNP.attachNewNode(BulletRigidBodyNode('Cylinder'))
             npc.node().setMass(50.0)
             npc.node().addShape(cylinder_shape)
-            npc.setPos(random.randrange(-20,20), random.randrange(0,50), 3)
+            npc.setPos(random.randrange(-15,10), random.randrange(10,45), 3)
             h=random.randint(-180,180)
             npc.setHpr(h,0,0)
 

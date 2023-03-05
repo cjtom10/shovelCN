@@ -140,6 +140,7 @@ class Game(DirectObject):
                             mayChange=1)
 
     def handle_play():
+        frame.destroy()
         title.destroy()
         desc.destroy()
         play_button.destroy()

@@ -14,7 +14,7 @@ from direct.showbase.DirectObject import DirectObject
 from direct.showbase.InputStateGlobal import inputState
 from direct.gui.OnscreenText import OnscreenText,TextNode
 from direct.gui.OnscreenImage import OnscreenImage
-from direct.gui.DirectGui import DGG, DirectButton
+from direct.gui.DirectGui import DGG, DirectButton, DirectFrame
 from direct.interval.LerpInterval import LerpFunc
 from direct.interval.IntervalGlobal import Sequence, Parallel, Func, Wait
 from direct.interval.LerpInterval import *
@@ -131,11 +131,12 @@ class Game(DirectObject):
 
   def __init__(self):
     self.accept('escape', self.doExit)
+    frame = DirectFrame(frameColor=(0, 0, 0, 1), frameSize=(-100, 100, -100, 100))
     title = OnscreenText(text="OPPA IN A HAYSTACK", scale=0.2,
                             fg=(1, 0.5, 0.5, 1), align=TextNode.ACenter,
                             mayChange=1)
     desc = OnscreenText(text="When push comes to shovel", scale=0.1,
-                            pos=(0, -0.1, 0), fg=(0.2, 0.2, 0.2, 1), align=TextNode.ACenter,
+                            pos=(0, -0.1, 0), fg=(0.5, 0.5, 0.5, 1), align=TextNode.ACenter,
                             mayChange=1)
 
     def handle_play():

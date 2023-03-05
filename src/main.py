@@ -156,6 +156,9 @@ class Game(DirectObject):
     # self.camtask()
     # self.camtarg.setPos(self.playerNP.getPos(render))
 
+    for npc in self.npc_list:
+      npc.setHpr(0, 0, 0)
+      
     return task.cont
   # 
   def camtask(self):
@@ -239,7 +242,7 @@ class Game(DirectObject):
 
     """----------------- NPC creation ------------------"""
     npc_factory = NPCFactory()
-    npc_factory.create(self.world, self.worldNP, 500)
+    self.npc_list = npc_factory.create(self.world, self.worldNP, 500)
 
     minn = loader.loadModel('../models/minn.glb')
     minn.reparentTo(self.worldNP)

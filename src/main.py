@@ -65,7 +65,8 @@ class Game(DirectObject):
     base.cam.lookAt(0, 0, 0)
 
     self.startSound = loader.loadSfx('../sounds/findOppa.wav')
-    # self.bg.play()
+    bg = loader.loadSfx('../sounds/bgm.wav')
+    bg.play()
 
     self.oppas =['../models/oppas/oppa1.egg','../models/oppas/oppa2.egg']
     
@@ -111,7 +112,7 @@ class Game(DirectObject):
 
     self.collisionSetup()
 
-    self.accept('findoppa-into-oppafound', self.oppaFound)
+    # self.accept('findoppa-into-oppafound', self.oppaFound)
     # Input
     self.accept('r', self.doReset)
     self.accept('f1', self.toggleWireframe)
@@ -141,6 +142,7 @@ class Game(DirectObject):
   # _____HANDLER_____
 
   def __init__(self):
+
     self.accept('escape', self.doExit)
     frame = DirectFrame(frameColor=(0, 0, 0, 1), frameSize=(-100, 100, -100, 100))
     title = OnscreenText(text="OPPA IN A HAYSTACK", scale=0.2,
@@ -149,8 +151,11 @@ class Game(DirectObject):
     desc = OnscreenText(text="When push comes to shovel", scale=0.1,
                             pos=(0, -0.1, 0), fg=(0.5, 0.5, 0.5, 1), align=TextNode.ACenter,
                             mayChange=1)
+    self.bg = loader.loadSfx('../sounds/oppabgm.wav')
+    self.bg.play()
 
     def handle_play():
+        self.bg.stop()
         frame.destroy()
         title.destroy()
         desc.destroy()
@@ -168,8 +173,11 @@ class Game(DirectObject):
   def doReset(self):
     self.timer=0
     self.oppacount += 10
+    self.text.clearText()
+    self.text.setText("Q: turn Left\nE: turn right")
     self.oppas =['../models/oppas/oppa1.egg','../models/oppas/oppa2.egg','../models/oppas/oppa3.egg']
     self.cleanup()
+    self.collisionSetup()
     self.setup()
 
   def toggleWireframe(self):
@@ -197,7 +205,7 @@ class Game(DirectObject):
 
      traverser.addCollider(self.found, self.collHandEvent)
 
-
+     self.accept('findoppa-into-oppafound', self.oppaFound)
   #def doJump(self):
   #  self.player.setMaxJumpHeight(5.0)
   #  self.player.setJumpSpeed(8.0)
@@ -214,7 +222,7 @@ class Game(DirectObject):
   def processInput(self, dt):
     speed = Vec3(0, 0, 0)
     omega = 0.0
-    speed.setY( 2.0)
+    speed.setY( 4)
     # if inputState.isSet('forward'): speed.setY( 2.0)
     if inputState.isSet('reverse'): speed.setY(-2.0)
     if inputState.isSet('left'):    speed.setX(-2.0)
@@ -227,6 +235,7 @@ class Game(DirectObject):
 
   def oppaFound(self, entry):
      print(' you found opppa! time:', self.timer)
+     self.text.setText(f' you found opppa! \ntime:{round(self.timer, 2)}\nR:reset\nesc:quit',)
 
   def update(self, task):
     dt = globalClock.getDt()
@@ -317,6 +326,7 @@ class Game(DirectObject):
     # oppaModel = Actor('../models/oppa1.egg',
     #                   {'idle': '../models/oppa1-idle1.egg'})
     # print(f'../models/oppa-idle{a}.egg')
+    oppaModel.loop('idle3')
     oppaModel.reparentTo(self.oppa)
     oppaModel.setZ(-1)
     oppaModel.setScale(.8)
@@ -325,7 +335,7 @@ class Game(DirectObject):
     self.found=self.oppa.attachNewNode(CollisionNode('oppafound'))
     sphere =CollisionSphere(0,0,0, 1)
     self.found.node().addSolid(sphere)
-    self.found.show()
+    # self.found.show()
     
     def showOppa():
         img = currentoppa.replace("egg", "png")
@@ -358,7 +368,7 @@ class Game(DirectObject):
 
     # World
     self.debugNP = self.worldNP.attachNewNode(BulletDebugNode('Debug'))
-    self.debugNP.show()
+    # self.debugNP.show()
 
     self.world = BulletWorld()
     self.world.setGravity(Vec3(0, 0, -9.81))
@@ -426,7 +436,7 @@ class Game(DirectObject):
     self.findoppa=self.playerNP.attachNewNode(CollisionNode('findoppa'))
     sphere =CollisionSphere(0,1,0, 1)
     self.findoppa.node().addSolid(sphere)
-    self.findoppa.show()
+    # self.findoppa.show()
     shovel.setPos(-.1,0,0)
 
     """----------------- NPC creation ------------------"""
@@ -446,7 +456,8 @@ class Game(DirectObject):
     # base.cam.setP(-30)\handr = self
    
     base.cam.reparentTo(self.playerNP)
-    base.cam.setY(-13)
+    base.cam.setPos(0,-13, 10)
+    base.cam.setP(-30)
 
     self.playerM.loop('sweeping')
     # base.cam.reparentTo(self.camtarg)
